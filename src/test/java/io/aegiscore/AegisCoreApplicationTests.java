@@ -1,3 +1,4 @@
+
 package io.aegiscore;
 
 import org.junit.jupiter.api.Test;
@@ -416,6 +417,29 @@ class AegisCoreApplicationTests {
     }
 
     @Test
+    void shouldRejectCloudAssetRegionLongerThan50Characters()
+            throws Exception {
+        String longRegion = "a".repeat(51);
+
+        String assetJson = """
+                {
+                    "id": "asset-long-region-test",
+                    "name": "database-test",
+                    "type": "DATABASE",
+                    "provider": "AWS",
+                    "region": "%s"
+                }
+                """.formatted(longRegion);
+
+        mockMvc.perform(post("/api/v1/assets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(assetJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error")
+                        .value("Validation failed"));
+    }
+
+    @Test
     void shouldRejectInvalidCloudAssetUpdate() throws Exception {
         String originalAsset = """
                 {
@@ -505,5 +529,4 @@ class AegisCoreApplicationTests {
                 .andExpect(jsonPath("$.details[0].message")
                         .value("Name is required"));
     }
-
 }
