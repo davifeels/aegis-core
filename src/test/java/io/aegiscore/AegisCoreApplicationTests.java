@@ -473,6 +473,11 @@ class AegisCoreApplicationTests {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error")
                         .value("Validation failed"));
+
+        mockMvc.perform(get("/api/v1/assets/asset-invalid-update-test"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("database-original"))
+                .andExpect(jsonPath("$.region").value("sa-east-1"));
     }
 
     @Test
