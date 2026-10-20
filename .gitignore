@@ -46,3 +46,23 @@ application-local.yml
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local secrets and database credentials
+.envrc
+*.local
+secrets/
+secrets.*
+application-secrets.properties
+application-secrets.yml
+
+# Logs and temporary files
+*.log
+logs/
+*.tmp
+*.swp
+*~
+
+# Local database and IDE state
+*.sqlite
+*.sqlite3
+.idea/**/workspace.xml
