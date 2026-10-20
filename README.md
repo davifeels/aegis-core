@@ -4,16 +4,16 @@
 
 AegisCore is a backend application built with Java and Spring Boot to manage cloud infrastructure assets through a RESTful API. It provides CRUD operations, request validation, centralized exception handling, and PostgreSQL persistence.
 
-The project focuses on backend engineering fundamentals, clean separation of responsibilities, data integrity, and automated testing.
+The project focuses on backend engineering fundamentals, separation of responsibilities, data integrity, and automated testing.
 
 ## Features
 
-- **RESTful API:** Create, retrieve, update, and delete cloud assets.
-- **Input validation:** Enforces required fields, length constraints, and supported asset types and cloud providers.
-- **PostgreSQL persistence:** Stores cloud asset records using Spring Data JPA.
-- **Centralized error handling:** Returns structured HTTP error responses for validation failures, malformed requests, missing resources, and conflicts.
-- **Automated testing:** Integration tests cover API behavior, validation, persistence, and error scenarios.
-- **Environment-based configuration:** Database credentials are supplied through environment variables instead of being hardcoded.
+- RESTful API for creating, retrieving, updating, and deleting cloud assets.
+- Request validation with Jakarta Bean Validation.
+- PostgreSQL persistence using Spring Data JPA and Hibernate.
+- Centralized exception handling with structured HTTP responses.
+- Automated integration tests covering API behavior and error scenarios.
+- Environment-based database configuration to avoid hardcoded credentials.
 
 ## Tech Stack
 
@@ -21,11 +21,11 @@ The project focuses on backend engineering fundamentals, clean separation of res
 |---|---|
 | Java 25 | Programming language |
 | Spring Boot 4.1.1 | Application framework |
-| Spring Web | REST API endpoints |
-| Spring Data JPA | Database access and persistence |
-| Hibernate | ORM and entity management |
+| Spring Web | REST API development |
+| Spring Data JPA | Database access |
+| Hibernate | Object-relational mapping |
 | PostgreSQL 18 | Relational database |
-| Jakarta Bean Validation | Request validation |
+| Jakarta Bean Validation | Input validation |
 | Maven Wrapper | Build and dependency management |
 | JUnit and Spring Boot Test | Automated testing |
 | Git and GitHub | Version control |
@@ -53,14 +53,14 @@ CloudAssetEntity
 PostgreSQL
 ```
 
-**Main components**
+### Main Components
 
-- `CloudAssetController` — exposes the REST endpoints.
-- `CloudAssetService` — handles asset registration, retrieval, updates, and deletion.
-- `CloudAssetRepository` — provides database operations through Spring Data JPA.
-- `CloudAssetEntity` — maps cloud assets to the database.
-- `CloudAsset` — defines the API data model and validation constraints.
-- `GlobalExceptionHandler` — centralizes API error responses.
+- **CloudAssetController:** Exposes the REST API endpoints.
+- **CloudAssetService:** Implements the asset management operations.
+- **CloudAssetRepository:** Provides database access through Spring Data JPA.
+- **CloudAssetEntity:** Represents cloud assets in the database.
+- **CloudAsset:** Defines the API data model and validation rules.
+- **GlobalExceptionHandler:** Centralizes error handling and HTTP responses.
 
 ## API Reference
 
@@ -91,9 +91,11 @@ http://localhost:8080/api/v1/assets
 - `AZURE`
 - `GCP`
 
-### Example Request
+## Example Request
 
 Register a cloud asset:
+
+**Request**
 
 ```http
 POST /api/v1/assets
@@ -110,11 +112,7 @@ Content-Type: application/json
 }
 ```
 
-Example response:
-
-```http
-HTTP/1.1 201 Created
-```
+**Successful response — `201 Created`**
 
 ```json
 {
@@ -126,11 +124,11 @@ HTTP/1.1 201 Created
 }
 ```
 
-### Error Handling
+## Error Handling
 
-The API uses appropriate HTTP status codes to communicate request outcomes.
+The API returns appropriate HTTP status codes for common error scenarios.
 
-| Status | Meaning |
+| Status | Description |
 |---|---|
 | `400 Bad Request` | Invalid input, validation failure, or malformed JSON |
 | `404 Not Found` | Requested asset does not exist |
@@ -138,13 +136,13 @@ The API uses appropriate HTTP status codes to communicate request outcomes.
 | `201 Created` | Asset successfully registered |
 | `204 No Content` | Asset successfully deleted |
 
-Validation errors include field-level details to help clients identify invalid input.
+Validation responses include field-level details to help clients identify invalid input.
 
 ## Getting Started
 
 ### Prerequisites
 
-Make sure you have the following installed:
+Install the following software:
 
 - Java 25 or a compatible JDK
 - PostgreSQL
@@ -152,106 +150,111 @@ Make sure you have the following installed:
 
 The project includes the Maven Wrapper, so a separate Maven installation is not required.
 
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/davifeels/aegis-core.git
 cd aegis-core
 ```
 
-### 2. Create the PostgreSQL database
+### 2. Create the PostgreSQL Databases
 
-Connect to PostgreSQL using an administrative account and create a dedicated application user and database.
+Connect to PostgreSQL using an administrative account and create the application user and databases.
 
 ```sql
 CREATE USER aegiscore_user WITH PASSWORD 'CHANGE_ME';
+
 CREATE DATABASE aegiscore OWNER aegiscore_user;
+
+CREATE DATABASE aegiscore_test OWNER aegiscore_user;
 ```
 
-Replace `CHANGE_ME` with a strong local password. Do not commit real credentials to the repository.
+Replace `CHANGE_ME` with a strong local password. Never commit real credentials to the repository.
 
-### 3. Configure environment variables
+### 3. Configure Environment Variables
 
-On Linux or macOS, set the database credentials in your shell:
+On Linux or macOS, configure the database credentials in your shell:
 
 ```bash
 export DB_USER=aegiscore_user
 export DB_PASSWORD='your-local-password'
 ```
 
-These variables are used by the application's database configuration. The database must be running and accessible on `localhost:5432`.
+These variables are used by the application's database configuration.
 
-### 4. Run the application
+Ensure PostgreSQL is running and accessible at `localhost:5432`.
+
+### 4. Run the Application
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-The API will be available at:
+The application will start on:
 
 ```text
 http://localhost:8080
 ```
 
+The asset API will be available at:
+
+```text
+http://localhost:8080/api/v1/assets
+```
+
 ## Testing
 
-Run the complete verification suite:
+Run the full verification suite:
 
 ```bash
 ./mvnw clean verify
 ```
 
-The test suite uses a separate PostgreSQL database named `aegiscore_test`, configured through `src/test/resources/application.properties`.
+The test configuration uses the separate `aegiscore_test` database.
 
-Create the test database and grant access to the configured application user before running the tests:
-
-```sql
-CREATE DATABASE aegiscore_test OWNER aegiscore_user;
-```
-
-Set the same `DB_USER` and `DB_PASSWORD` environment variables used by the application.
-
-**Important:** The test configuration uses `spring.jpa.hibernate.ddl-auto=create-drop`. The test database is intended exclusively for automated tests; do not point it at a database containing data you need to preserve.
+**Important:** The test profile uses `spring.jpa.hibernate.ddl-auto=create-drop`, which creates and drops database tables during the test lifecycle. Never point the test configuration at a database containing data you need to preserve.
 
 The latest verified test run completed with **23 tests, 0 failures, and 0 errors**.
 
 ## Configuration
 
-The application reads its database settings from environment variables.
+The application reads database credentials from environment variables.
 
 | Variable | Purpose | Default |
 |---|---|---|
 | `DB_USER` | PostgreSQL username | `aegiscore_user` |
 | `DB_PASSWORD` | PostgreSQL password | No default; must be provided |
 
-The main application uses Hibernate schema updates through `spring.jpa.hibernate.ddl-auto=update`. For production deployments, use a deliberate database migration strategy and review schema changes before applying them.
+The main application currently uses `spring.jpa.hibernate.ddl-auto=update`.
+
+For production environments, consider using a dedicated database migration tool such as Flyway and reviewing schema changes before deployment.
 
 ## Engineering Practices
 
-This project demonstrates practical backend development concepts, including:
+This project demonstrates practical backend development concepts:
 
 - Separation of controllers, services, repositories, and entities.
 - REST conventions and meaningful HTTP status codes.
-- Bean Validation for incoming requests.
-- Transaction boundaries for database operations.
+- Request validation with Jakarta Bean Validation.
+- Transaction management for database operations.
 - Centralized exception handling.
 - Environment-based configuration for sensitive values.
 - Automated integration testing.
-- Version control with Git.
+- Version control using Git.
 
 ## Roadmap
 
 Potential future improvements include:
 
-- API documentation with OpenAPI and Swagger UI.
+- OpenAPI documentation and Swagger UI.
 - Authentication and role-based authorization.
 - Database migrations with Flyway.
-- Docker and Docker Compose deployment.
+- Docker and Docker Compose support.
 - Continuous integration with GitHub Actions.
 - Cloud deployment and infrastructure monitoring.
 - Pagination, filtering, and sorting for asset queries.
 
-These items are planned improvements, not features currently claimed as implemented.
+These are planned improvements and are not represented as currently implemented features.
 
 ## Author
 
@@ -265,4 +268,4 @@ Backend Developer | Java · Spring Boot · REST APIs · PostgreSQL
 
 ## License
 
-No license has been specified yet. All rights are reserved unless a license is added to this repository.
+No license has been specified for this repository. All rights are reserved unless a license is added.
