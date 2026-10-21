@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient for emblem -->
+    <radialGradient id="aegisGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#080d19" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Shield Border Gradient -->
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+
+    <!-- Inner Core Gradient -->
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Text Core Gradient -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Ambient Glow Behind Shield -->
+  <circle cx="100" cy="100" r="85" fill="url(#aegisGlow)" />
+
+  <!-- Shield Outer Geometry -->
+  <g transform="translate(25, 20)">
+    <!-- Outer Shield Outline -->
+    <path d="M 75,10 
+             L 135,32 
+             L 135,95 
+             C 135,135 105,158 75,170 
+             C 45,158 15,135 15,95 
+             L 15,32 Z" 
+          fill="#0c1322" 
+          stroke="url(#shieldGrad)" 
+          stroke-width="3" 
+          stroke-linejoin="round"
+          filter="url(#neonGlow)"/>
+
+    <!-- Inner Shield Inset -->
+    <path d="M 75,22 
+             L 123,40 
+             L 123,92 
+             C 123,124 99,144 75,154 
+             C 51,144 27,124 27,92 
+             L 27,40 Z" 
+          fill="rgba(15, 23, 42, 0.7)" 
+          stroke="rgba(56, 189, 248, 0.35)" 
+          stroke-width="1.5" 
+          stroke-linejoin="round"/>
+
+    <!-- Circuit Lines & Connectivity Nodes -->
+    <line x1="75" y1="35" x2="75" y2="60" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="75" cy="35" r="3.5" fill="#22d3ee"/>
+
+    <line x1="45" y1="70" x2="62" y2="82" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="45" cy="70" r="3" fill="#22d3ee"/>
+
+    <line x1="105" y1="70" x2="88" y2="82" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="105" cy="70" r="3" fill="#22d3ee"/>
+
+    <!-- Central Security Keyhole & Core Block -->
+    <!-- Lock Body -->
+    <rect x="57" y="85" width="36" height="30" rx="6" fill="url(#coreGrad)" stroke="#e0f2fe" stroke-width="1.2"/>
+    <!-- Lock Shackle -->
+    <path d="M 64,85 L 64,74 C 64,66 86,66 86,74 L 86,85" 
+          fill="none" 
+          stroke="#e0f2fe" 
+          stroke-width="3.2" 
+          stroke-linecap="round"/>
+    <!-- Keyhole / Core Node -->
+    <circle cx="75" cy="97" r="3.5" fill="#0f172a"/>
+    <path d="M 73.5,98 L 76.5,98 L 78,107 L 72,107 Z" fill="#0f172a"/>
+
+    <!-- Bottom Pulse Lines -->
+    <path d="M 60,130 L 75,142 L 90,130" fill="none" stroke="url(#shieldGrad)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Typography & Brand Text -->
+  <g transform="translate(195, 20)">
+    <!-- Main Title -->
+    <text x="0" y="78" font-family="'Poppins', 'Inter', 'Segoe UI', sans-serif" font-weight="800" font-size="52" fill="#ffffff" letter-spacing="3.5">
+      AEGIS<tspan fill="url(#textGrad)">CORE</tspan>
+    </text>
+
+    <!-- Subtitle Badge / Description -->
+    <text x="3" y="112" font-family="'Inter', 'Segoe UI', sans-serif" font-weight="700" font-size="13.5" fill="#38bdf8" letter-spacing="2.2">
+      CLOUD SECURITY &amp; ASSET PLATFORM
+    </text>
+
+    <!-- Technology Pills Row -->
+    <g transform="translate(0, 130)">
+      <!-- Pill 1: Java 25 & Spring Boot 4 -->
+      <rect x="0" y="0" width="175" height="25" rx="6" fill="rgba(56, 189, 248, 0.12)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1"/>
+      <text x="12" y="17" font-family="'Inter', sans-serif" font-weight="600" font-size="11" fill="#7dd3fc">JAVA 25 · SPRING BOOT 4</text>
+
+      <!-- Pill 2: PostgreSQL & Testcontainers -->
+      <rect x="185" y="0" width="145" height="25" rx="6" fill="rgba(139, 92, 246, 0.12)" stroke="rgba(139, 92, 246, 0.35)" stroke-width="1"/>
+      <text x="197" y="17" font-family="'Inter', sans-serif" font-weight="600" font-size="11" fill="#c4b5fd">TESTCONTAINERS</text>
+
+      <!-- Pill 3: AWS Architecture -->
+      <rect x="340" y="0" width="95" height="25" rx="6" fill="rgba(245, 158, 11, 0.12)" stroke="rgba(245, 158, 11, 0.35)" stroke-width="1"/>
+      <text x="350" y="17" font-family="'Inter', sans-serif" font-weight="600" font-size="11" fill="#fcd34d">AWS READY</text>
+    </g>
+  </g>
+</svg>
