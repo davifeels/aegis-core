@@ -10,10 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,8 +32,11 @@ class AssetAuditIntegrationTests {
     @Autowired
     private AssetAuditRepository auditRepository;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @Test
-    void shouldPersistAuditAfterAssetRegistrationCommits() {
+    void shouldPersistAuditOnlyAfterAssetRegistrationCommits() {
         String assetId = "audit-it-" + UUID.randomUUID();
 
         SecurityContextHolder.clearContext();
@@ -44,11 +50,26 @@ class AssetAuditIntegrationTests {
                     "sa-east-1"
             );
 
-            cloudAssetService.register(asset);
+            TransactionTemplate transaction =
+                    new TransactionTemplate(transactionManager);
+
+            transaction.executeWithoutResult(status -> {
+                cloudAssetService.register(asset);
+
+                assertTrue(
+                        assetRepository.existsById(assetId),
+                        "Asset should exist inside the transaction"
+                );
+
+                assertFalse(
+                        auditExistsFor(assetId),
+                        "Audit must not be persisted before commit"
+                );
+            });
 
             assertTrue(
                     assetRepository.existsById(assetId),
-                    "Asset should be committed before the service returns"
+                    "Asset should be committed"
             );
 
             AssetAuditRecordEntity record = auditRepository.findAll()
@@ -71,8 +92,17 @@ class AssetAuditIntegrationTests {
                     .filter(item -> assetId.equals(item.getAssetId()))
                     .forEach(auditRepository::delete);
 
-            assetRepository.deleteById(assetId);
+            if (assetRepository.existsById(assetId)) {
+                assetRepository.deleteById(assetId);
+            }
+
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private boolean auditExistsFor(String assetId) {
+        return auditRepository.findAll()
+                .stream()
+                .anyMatch(item -> assetId.equals(item.getAssetId()));
     }
 }

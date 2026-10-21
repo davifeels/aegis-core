@@ -1,3 +1,4 @@
+
 package io.aegiscore.audit;
 
 import io.aegiscore.audit.service.AssetAuditPersistenceService;
@@ -23,9 +24,9 @@ public class AssetAuditListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(AssetAuditEvent event) {
-        String action = safeField(event.action());
-        String actor = safeField(event.actor());
-        String assetId = safeField(event.assetId());
+        String action = safeField(event.action(), 20);
+        String actor = safeField(event.actor(), 100);
+        String assetId = safeField(event.assetId(), 50);
 
         log.info(
                 "AUDIT action={} actor={} assetId={}",
@@ -47,15 +48,15 @@ public class AssetAuditListener {
         }
     }
 
-    private String safeField(String value) {
+    private String safeField(String value, int maxLength) {
         if (value == null || value.isBlank()) {
             return "unknown";
         }
 
         String sanitized = value.replaceAll("[\\p{Cntrl}]", "_");
 
-        return sanitized.length() > 100
-                ? sanitized.substring(0, 100)
+        return sanitized.length() > maxLength
+                ? sanitized.substring(0, maxLength)
                 : sanitized;
     }
 }

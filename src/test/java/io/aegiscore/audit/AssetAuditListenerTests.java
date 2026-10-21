@@ -9,10 +9,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
 
 @ExtendWith(MockitoExtension.class)
 class AssetAuditListenerTests {
@@ -99,6 +98,28 @@ class AssetAuditListenerTests {
                 "CREATE",
                 "test-user",
                 "asset-listener-002"
+        );
+        verifyNoMoreInteractions(persistenceService);
+    }
+
+    @Test
+    void shouldTruncateFieldsToDatabaseColumnLimits() {
+        String action = "A".repeat(25);
+        String actor = "B".repeat(120);
+        String assetId = "C".repeat(60);
+
+        AssetAuditEvent event = new AssetAuditEvent(
+                action,
+                actor,
+                assetId
+        );
+
+        listener.handle(event);
+
+        verify(persistenceService).record(
+                "A".repeat(20),
+                "B".repeat(100),
+                "C".repeat(50)
         );
         verifyNoMoreInteractions(persistenceService);
     }
