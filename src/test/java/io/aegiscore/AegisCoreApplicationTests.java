@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 class AegisCoreApplicationTests {
 
     @Autowired
@@ -535,7 +535,6 @@ class AegisCoreApplicationTests {
                         .value("Name is required"));
     }
 
-
     @Test
     void shouldReturn400ForEmptyRequestBody() throws Exception {
         mockMvc.perform(post("/api/v1/assets")
@@ -592,5 +591,4 @@ class AegisCoreApplicationTests {
                 .andExpect(jsonPath("$.name").value("database-original"))
                 .andExpect(jsonPath("$.region").value("sa-east-1"));
     }
-
 }
