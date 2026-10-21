@@ -323,3 +323,5 @@ This project demonstrates:
 ## License
 
 Add a license file if you intend to distribute this project under a specific open-source license.
+
+<!-- Dependency Review workflow validation -->
