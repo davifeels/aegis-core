@@ -2,8 +2,11 @@
 package io.aegiscore.config;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
+@ExtendWith(OutputCaptureExtension.class)
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "AEGIS_ADMIN_USERNAME=test-admin",
@@ -178,6 +182,22 @@ class SecurityTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(id))
                 .andExpect(jsonPath("$.name").value("Security Test Database"));
+    }
+
+    @Test
+    void shouldLogAuthenticatedAdminForAssetCreation(
+            CapturedOutput output) throws Exception {
+
+        String id = "security-audit-admin-001";
+
+        mockMvc.perform(post(ASSETS_URL)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAssetJson(id)))
+                .andExpect(status().isCreated());
+
+        assertTrue(output.getAll()
+                .contains("AUDIT action=CREATE actor=test-admin assetId=" + id));
     }
 
     @Test
