@@ -63,31 +63,44 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        .sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        ))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/v1/audit-logs",
+                                "/api/v1/audit-logs/**"
+                        ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/v1/assets",
                                 "/api/v1/assets/**"
                         ).hasAnyRole("ADMIN", "USER")
+
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/v1/assets",
                                 "/api/v1/assets/**"
                         ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.PUT,
                                 "/api/v1/assets/**"
                         ).hasRole("ADMIN")
+
                         .requestMatchers(
                                 HttpMethod.DELETE,
                                 "/api/v1/assets/**"
                         ).hasRole("ADMIN")
+
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults());
 
