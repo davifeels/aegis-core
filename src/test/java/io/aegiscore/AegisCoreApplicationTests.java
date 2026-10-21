@@ -534,4 +534,63 @@ class AegisCoreApplicationTests {
                 .andExpect(jsonPath("$.details[0].message")
                         .value("Name is required"));
     }
+
+
+    @Test
+    void shouldReturn400ForEmptyRequestBody() throws Exception {
+        mockMvc.perform(post("/api/v1/assets")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Malformed request"));
+    }
+
+    @Test
+    void shouldReturn415ForUnsupportedContentType() throws Exception {
+        mockMvc.perform(post("/api/v1/assets")
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("not-json"))
+                .andExpect(status().isUnsupportedMediaType());
+    }
+
+    @Test
+    void shouldPreserveAssetWhenUpdateRegionIsBlank() throws Exception {
+        String originalAsset = """
+                {
+                    "id": "asset-blank-region-update-test",
+                    "name": "database-original",
+                    "type": "DATABASE",
+                    "provider": "AWS",
+                    "region": "sa-east-1"
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/assets")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(originalAsset))
+                .andExpect(status().isCreated());
+
+        String invalidAsset = """
+                {
+                    "id": "asset-blank-region-update-test",
+                    "name": "database-updated",
+                    "type": "DATABASE",
+                    "provider": "AWS",
+                    "region": ""
+                }
+                """;
+
+        mockMvc.perform(put("/api/v1/assets/asset-blank-region-update-test")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidAsset))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation failed"))
+                .andExpect(jsonPath("$.details[0].field").value("region"));
+
+        mockMvc.perform(get("/api/v1/assets/asset-blank-region-update-test"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("database-original"))
+                .andExpect(jsonPath("$.region").value("sa-east-1"));
+    }
+
 }
