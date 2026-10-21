@@ -196,12 +196,15 @@ class SecurityTests {
                         .content(validAssetJson(id)))
                 .andExpect(status().isCreated());
 
-        assertTrue(output.getAll()
-                .contains("AUDIT action=CREATE actor=test-admin assetId=" + id));
+        assertTrue(output.getAll().contains(
+                "AUDIT action=CREATE actor=test-admin assetId=" + id
+        ));
     }
 
     @Test
-    void shouldAllowAdminToUpdateAsset() throws Exception {
+    void shouldAllowAdminToUpdateAsset(CapturedOutput output)
+            throws Exception {
+
         String id = "security-admin-update-001";
 
         createAssetAsAdmin(id);
@@ -225,10 +228,16 @@ class SecurityTests {
                 .andExpect(jsonPath("$.name")
                         .value("Security Test Database Updated"))
                 .andExpect(jsonPath("$.region").value("us-east-1"));
+
+        assertTrue(output.getAll().contains(
+                "AUDIT action=UPDATE actor=test-admin assetId=" + id
+        ));
     }
 
     @Test
-    void shouldAllowAdminToDeleteAsset() throws Exception {
+    void shouldAllowAdminToDeleteAsset(CapturedOutput output)
+            throws Exception {
+
         String id = "security-admin-delete-001";
 
         createAssetAsAdmin(id);
@@ -236,6 +245,10 @@ class SecurityTests {
         mockMvc.perform(delete(ASSETS_URL + "/" + id)
                         .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
                 .andExpect(status().isNoContent());
+
+        assertTrue(output.getAll().contains(
+                "AUDIT action=DELETE actor=test-admin assetId=" + id
+        ));
 
         mockMvc.perform(get(ASSETS_URL + "/" + id)
                         .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
