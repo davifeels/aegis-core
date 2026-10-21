@@ -3,9 +3,13 @@ package io.aegiscore.asset.service;
 import io.aegiscore.asset.CloudAsset;
 import io.aegiscore.asset.entity.CloudAssetEntity;
 import io.aegiscore.asset.repository.CloudAssetRepository;
+import io.aegiscore.audit.AssetAuditEvent;
 import io.aegiscore.exception.ResourceConflictException;
 import io.aegiscore.exception.ResourceNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +19,13 @@ import java.util.List;
 public class CloudAssetService {
 
     private final CloudAssetRepository assetRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CloudAssetService(CloudAssetRepository assetRepository) {
+    public CloudAssetService(
+            CloudAssetRepository assetRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.assetRepository = assetRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -38,6 +46,9 @@ public class CloudAssetService {
 
         try {
             CloudAssetEntity saved = assetRepository.saveAndFlush(entity);
+
+            publishAuditEvent("CREATE", saved.getId());
+
             return toDto(saved);
         } catch (DataIntegrityViolationException exception) {
             throw new ResourceConflictException(
@@ -89,6 +100,8 @@ public class CloudAssetService {
 
         CloudAssetEntity saved = assetRepository.save(updated);
 
+        publishAuditEvent("UPDATE", saved.getId());
+
         return toDto(saved);
     }
 
@@ -101,6 +114,28 @@ public class CloudAssetService {
                         ));
 
         assetRepository.delete(entity);
+
+        publishAuditEvent("DELETE", entity.getId());
+    }
+
+    private void publishAuditEvent(String action, String assetId) {
+        eventPublisher.publishEvent(
+                new AssetAuditEvent(action, currentActor(), assetId)
+        );
+    }
+
+    private String currentActor() {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                || authentication.getName().isBlank()) {
+            return "unknown";
+        }
+
+        return authentication.getName();
     }
 
     private CloudAsset toDto(CloudAssetEntity entity) {
