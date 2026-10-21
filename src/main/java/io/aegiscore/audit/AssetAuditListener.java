@@ -1,5 +1,6 @@
 package io.aegiscore.audit;
 
+import io.aegiscore.audit.service.AssetAuditPersistenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -12,18 +13,42 @@ public class AssetAuditListener {
     private static final Logger log =
             LoggerFactory.getLogger(AssetAuditListener.class);
 
+    private final AssetAuditPersistenceService persistenceService;
+
+    public AssetAuditListener(
+            AssetAuditPersistenceService persistenceService
+    ) {
+        this.persistenceService = persistenceService;
+    }
+
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(AssetAuditEvent event) {
+        String action = safeField(event.action());
+        String actor = safeField(event.actor());
+        String assetId = safeField(event.assetId());
+
         log.info(
                 "AUDIT action={} actor={} assetId={}",
-                safeField(event.action()),
-                safeField(event.actor()),
-                safeField(event.assetId())
+                action,
+                actor,
+                assetId
         );
+
+        try {
+            persistenceService.record(action, actor, assetId);
+        } catch (RuntimeException exception) {
+            log.error(
+                    "AUDIT_PERSISTENCE_FAILURE action={} actor={} assetId={}",
+                    action,
+                    actor,
+                    assetId,
+                    exception
+            );
+        }
     }
 
     private String safeField(String value) {
-        if (value == null) {
+        if (value == null || value.isBlank()) {
             return "unknown";
         }
 
