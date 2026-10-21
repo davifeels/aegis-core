@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -31,6 +32,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class SecurityTests {
 
+    private static final String ASSETS_URL = "/api/v1/assets";
+    private static final String ADMIN_USERNAME = "test-admin";
+    private static final String ADMIN_PASSWORD = "test-password";
+    private static final String USER_USERNAME = "test-user";
+    private static final String USER_PASSWORD = "test-user-password";
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -42,24 +49,26 @@ class SecurityTests {
 
     @Test
     void shouldEncodeAdminPassword() {
-        UserDetails admin = userDetailsService.loadUserByUsername("test-admin");
+        UserDetails admin =
+                userDetailsService.loadUserByUsername(ADMIN_USERNAME);
 
         assertTrue(passwordEncoder.matches(
-                "test-password",
+                ADMIN_PASSWORD,
                 admin.getPassword()
         ));
-        assertFalse(admin.getPassword().equals("test-password"));
+        assertFalse(admin.getPassword().equals(ADMIN_PASSWORD));
     }
 
     @Test
     void shouldEncodeRegularUserPassword() {
-        UserDetails user = userDetailsService.loadUserByUsername("test-user");
+        UserDetails user =
+                userDetailsService.loadUserByUsername(USER_USERNAME);
 
         assertTrue(passwordEncoder.matches(
-                "test-user-password",
+                USER_PASSWORD,
                 user.getPassword()
         ));
-        assertFalse(user.getPassword().equals("test-user-password"));
+        assertFalse(user.getPassword().equals(USER_PASSWORD));
     }
 
     @Test
@@ -70,13 +79,13 @@ class SecurityTests {
 
     @Test
     void shouldRejectUnauthenticatedAssetReadRequest() throws Exception {
-        mockMvc.perform(get("/api/v1/assets"))
+        mockMvc.perform(get(ASSETS_URL))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldRejectUnauthenticatedAssetCreationRequest() throws Exception {
-        mockMvc.perform(post("/api/v1/assets")
+        mockMvc.perform(post(ASSETS_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
@@ -84,7 +93,7 @@ class SecurityTests {
 
     @Test
     void shouldRejectUnauthenticatedAssetUpdateRequest() throws Exception {
-        mockMvc.perform(put("/api/v1/assets/1")
+        mockMvc.perform(put(ASSETS_URL + "/security-update-unauth")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isUnauthorized());
@@ -92,46 +101,144 @@ class SecurityTests {
 
     @Test
     void shouldRejectUnauthenticatedAssetDeletionRequest() throws Exception {
-        mockMvc.perform(delete("/api/v1/assets/1"))
+        mockMvc.perform(delete(ASSETS_URL + "/security-delete-unauth"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldAllowRegularUserToReadAssets() throws Exception {
-        mockMvc.perform(get("/api/v1/assets")
-                        .with(httpBasic("test-user", "test-user-password")))
+        mockMvc.perform(get(ASSETS_URL)
+                        .with(httpBasic(USER_USERNAME, USER_PASSWORD)))
                 .andExpect(status().isOk());
     }
 
     @Test
+    void shouldAllowRegularUserToReadAssetById() throws Exception {
+        mockMvc.perform(get(ASSETS_URL + "/security-user-read-missing")
+                        .with(httpBasic(USER_USERNAME, USER_PASSWORD)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void shouldForbidRegularUserFromCreatingAssets() throws Exception {
-        mockMvc.perform(post("/api/v1/assets")
-                        .with(httpBasic("test-user", "test-user-password"))
+        mockMvc.perform(post(ASSETS_URL)
+                        .with(httpBasic(USER_USERNAME, USER_PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .content(validAssetJson(
+                                "security-user-create-forbidden")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldForbidRegularUserFromUpdatingAssets() throws Exception {
-        mockMvc.perform(put("/api/v1/assets/1")
-                        .with(httpBasic("test-user", "test-user-password"))
+        mockMvc.perform(put(ASSETS_URL + "/security-user-update-forbidden")
+                        .with(httpBasic(USER_USERNAME, USER_PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .content(validAssetJson(
+                                "security-user-update-forbidden")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldForbidRegularUserFromDeletingAssets() throws Exception {
-        mockMvc.perform(delete("/api/v1/assets/1")
-                        .with(httpBasic("test-user", "test-user-password")))
+        mockMvc.perform(delete(
+                        ASSETS_URL + "/security-user-delete-forbidden")
+                        .with(httpBasic(USER_USERNAME, USER_PASSWORD)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void shouldAllowAdminToReadAssets() throws Exception {
-        mockMvc.perform(get("/api/v1/assets")
-                        .with(httpBasic("test-admin", "test-password")))
+        mockMvc.perform(get(ASSETS_URL)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void shouldAllowAdminToReadAssetById() throws Exception {
+        String id = "security-admin-read-001";
+
+        createAssetAsAdmin(id);
+
+        mockMvc.perform(get(ASSETS_URL + "/" + id)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.name").value("Security Test Database"));
+    }
+
+    @Test
+    void shouldAllowAdminToCreateAsset() throws Exception {
+        String id = "security-admin-create-001";
+
+        mockMvc.perform(post(ASSETS_URL)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAssetJson(id)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.name").value("Security Test Database"));
+    }
+
+    @Test
+    void shouldAllowAdminToUpdateAsset() throws Exception {
+        String id = "security-admin-update-001";
+
+        createAssetAsAdmin(id);
+
+        String updatedAsset = """
+                {
+                    "id": "security-admin-update-001",
+                    "name": "Security Test Database Updated",
+                    "type": "DATABASE",
+                    "provider": "AWS",
+                    "region": "us-east-1"
+                }
+                """;
+
+        mockMvc.perform(put(ASSETS_URL + "/" + id)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatedAsset))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.name")
+                        .value("Security Test Database Updated"))
+                .andExpect(jsonPath("$.region").value("us-east-1"));
+    }
+
+    @Test
+    void shouldAllowAdminToDeleteAsset() throws Exception {
+        String id = "security-admin-delete-001";
+
+        createAssetAsAdmin(id);
+
+        mockMvc.perform(delete(ASSETS_URL + "/" + id)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(ASSETS_URL + "/" + id)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD)))
+                .andExpect(status().isNotFound());
+    }
+
+    private void createAssetAsAdmin(String id) throws Exception {
+        mockMvc.perform(post(ASSETS_URL)
+                        .with(httpBasic(ADMIN_USERNAME, ADMIN_PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validAssetJson(id)))
+                .andExpect(status().isCreated());
+    }
+
+    private String validAssetJson(String id) {
+        return """
+                {
+                    "id": "%s",
+                    "name": "Security Test Database",
+                    "type": "DATABASE",
+                    "provider": "AWS",
+                    "region": "sa-east-1"
+                }
+                """.formatted(id);
     }
 }
