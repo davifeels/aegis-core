@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aegiscore
+      POSTGRES_USER: ${DB_USER:?Configure DB_USER no arquivo .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD no arquivo .env}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/aegiscore
+      DB_USER: ${DB_USER:?Configure DB_USER no arquivo .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Configure DB_PASSWORD no arquivo .env}
+      AEGIS_ADMIN_USERNAME: ${AEGIS_ADMIN_USERNAME:?Configure AEGIS_ADMIN_USERNAME no arquivo .env}
+      AEGIS_ADMIN_PASSWORD: ${AEGIS_ADMIN_PASSWORD:?Configure AEGIS_ADMIN_PASSWORD no arquivo .env}
+    ports:
+      - "8081:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
